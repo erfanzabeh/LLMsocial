@@ -206,6 +206,8 @@ class InteractionDatasetRunner:
 
     def run_all(self, verbose: bool = True) -> List[Interaction]:
         all_interactions: List[Interaction] = []
+        total_runs = len(self.interlocutors) * len(self.tasks) * self.n_episodes
+        completed_runs = 0
 
         for interlocutor in self.interlocutors:
             for task in self.tasks:
@@ -220,14 +222,36 @@ class InteractionDatasetRunner:
                 )
                 for ep in range(self.n_episodes):
                     iid = f"{task.task_id}__{interlocutor.agent_id}__ep{ep:03d}"
+                    if verbose:
+                        print(
+                            f"[{completed_runs + 1}/{total_runs}] "
+                            f"persona={interlocutor.agent_id} | "
+                            f"task={task.task_id} | "
+                            f"episode={ep + 1}/{self.n_episodes}",
+                            flush=True,
+                        )
                     try:
                         interaction = env.run_episode(
                             interaction_id=iid, verbose=verbose
                         )
                         all_interactions.append(interaction)
                         self._save_interaction(interaction)
+                        completed_runs += 1
+                        if verbose:
+                            print(
+                                f"Completed {iid} "
+                                f"({completed_runs}/{total_runs})",
+                                flush=True,
+                            )
                     except Exception as exc:
+                        completed_runs += 1
                         logger.error(f"Episode {iid} failed: {exc}")
+                        if verbose:
+                            print(
+                                f"Failed {iid} "
+                                f"({completed_runs}/{total_runs})",
+                                flush=True,
+                            )
 
         return all_interactions
 
