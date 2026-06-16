@@ -22,7 +22,8 @@ results/
 
 # Jupyter
 .ipynb_checkpoints/
-*.ipynb
+# *.ipynb  # re-enabled: commit notebooks
+!notebooks/*.ipynb
 
 # OS
 .DS_Store
