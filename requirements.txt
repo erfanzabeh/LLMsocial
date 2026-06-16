@@ -1,0 +1,26 @@
+# Core
+torch>=2.0.0
+transformers>=4.40.0
+accelerate>=0.27.0
+tokenizers>=0.15.0
+
+# Data
+h5py>=3.10.0
+numpy>=1.24.0
+scipy>=1.11.0
+
+# ML / analysis
+scikit-learn>=1.4.0
+
+# Optional (for UMAP geometry)
+umap-learn>=0.5.6
+
+# Config
+pyyaml>=6.0
+
+# Visualization
+matplotlib>=3.8.0
+
+# Notebooks
+jupyter>=1.0.0
+ipykernel>=6.29.0

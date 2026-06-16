@@ -1,0 +1,40 @@
+# SocialLLM experiment configuration
+
+experiment:
+  name: "social_llm_v1"
+  seed: 42
+  device: "cpu"          # change to "cuda" if GPU is available
+
+target:
+  model_name: "gpt2-xl"
+  temperature: 0.8
+  max_new_tokens: 128
+
+interlocutors:
+  # List of (model_name, agent_id, persona, temperature) triplets
+  # These are created automatically by make_interlocutor_configs()
+  # Override here if you want custom configs
+
+tasks:
+  - "qa"
+  - "debate"
+  - "story"
+  - "problem_solving"
+
+data_collection:
+  n_episodes_per_condition: 10   # interactions per (interlocutor x task) pair
+  max_context_turns: 8
+
+activation:
+  aggregation: "mean"            # "mean" | "last" | "max" over token dimension
+  output_path: "data/activations/activations.h5"
+
+analysis:
+  fdr_alpha: 0.05
+  n_decoding_folds: 5
+  n_top_units_plot: 10          # tuning curves for top-N selective units
+
+output:
+  interactions_dir: "data/interactions"
+  results_dir: "results"
+  figures_dir: "results/figures"
