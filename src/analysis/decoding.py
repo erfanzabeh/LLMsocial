@@ -45,8 +45,34 @@ def decode_layer(
       - chance_level (1 / n_conditions)
       - fold_accuracies
     """
+    from sklearn.model_selection import LeaveOneOut
+    
     n_conditions = len(np.unique(labels))
     chance = 1.0 / n_conditions
+    
+    n_samples = len(data)
+    
+    # Special handling for very small sample sizes
+    if n_samples == 1:
+        # With 1 sample, we can't do meaningful cross-validation
+        # Return a placeholder result
+        return {
+            "mean_accuracy": float(1.0 / n_conditions),  # random guess
+            "std_accuracy": 0.0,
+            "fold_accuracies": [1.0 / n_conditions],
+            "chance_level": chance,
+            "above_chance": False,
+            "n_folds": 1,
+            "n_samples": 1,
+        }
+    
+    # For small sample sizes, use LeaveOneOut or reduce folds
+    if n_samples <= 2:
+        cv = LeaveOneOut()
+    else:
+        actual_folds = min(n_folds, n_samples)
+        from sklearn.model_selection import StratifiedKFold
+        cv = StratifiedKFold(n_splits=actual_folds, shuffle=True, random_state=random_state)
 
     pipeline = Pipeline([
         ("scaler", StandardScaler()),
@@ -58,7 +84,6 @@ def decode_layer(
         )),
     ])
 
-    cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=random_state)
     scores = cross_val_score(pipeline, data, labels, cv=cv, scoring="accuracy")
 
     return {
@@ -67,7 +92,8 @@ def decode_layer(
         "fold_accuracies": scores.tolist(),
         "chance_level": chance,
         "above_chance": float(scores.mean()) > chance,
-        "n_folds": n_folds,
+        "n_folds": len(scores),
+        "n_samples": n_samples,
     }
 
 
@@ -132,6 +158,9 @@ def pca_population_geometry(
     from sklearn.decomposition import PCA
     from sklearn.preprocessing import StandardScaler
 
+    # Handle 3D data by aggregating along token dimension
+    if data.ndim == 3:
+        data = data.mean(axis=1)
     X = StandardScaler().fit_transform(data)
     pca = PCA(n_components=min(n_components, data.shape[1], data.shape[0]))
     projected = pca.fit_transform(X)

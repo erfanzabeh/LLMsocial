@@ -34,16 +34,24 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 def compute_condition_means(
-    data: np.ndarray,         # (N_samples, N_units)
+    data: np.ndarray,         # (N_samples, N_units) or (N_samples, N_tokens, N_units)
     labels: np.ndarray,       # (N_samples,)  int condition labels
     n_conditions: int,
 ) -> np.ndarray:
     """
     Compute mean activation per condition.
+    
+    Handles both 2D data (N_samples, N_units) and 3D data (N_samples, N_tokens, N_units).
+    If data is 3D, aggregates along the token dimension first.
 
     Returns:
         means: (N_conditions, N_units)
     """
+    # If data is 3D, aggregate along token dimension
+    if data.ndim == 3:
+        # data shape: (N_samples, N_tokens, N_units) -> (N_samples, N_units)
+        data = data.mean(axis=1)
+    
     means = np.zeros((n_conditions, data.shape[1]), dtype=np.float32)
     for c in range(n_conditions):
         mask = labels == c

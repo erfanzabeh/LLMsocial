@@ -27,7 +27,7 @@ class AgentConfig:
     agent_id: str                       # unique name used as label in activations
     persona: Optional[str] = None       # optional system-prompt / persona prefix
     temperature: float = 0.8
-    max_new_tokens: int = 128
+    max_new_tokens: int = 64            # Reduced from 128 to stay within GPT-2's 1024 token limit
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
     # Additional generation kwargs forwarded verbatim
     generation_kwargs: Dict[str, Any] = field(default_factory=dict)
@@ -99,7 +99,7 @@ class LLMAgent:
             prompt,
             return_tensors="pt",
             truncation=True,
-            max_length=900,   # leave room for new tokens
+            max_length=850,   # leave room for new tokens + safety margin
         ).to(self.config.device)
 
         prompt_len = inputs["input_ids"].shape[1]

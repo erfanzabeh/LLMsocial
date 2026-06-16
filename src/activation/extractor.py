@@ -139,21 +139,43 @@ class ActivationDataset:
             f.attrs["n_conditions"] = len(self._label_map)
 
             for layer_name, samples in self._buffer.items():
-                vecs = np.stack([s[0] for s in samples], axis=0).astype(np.float32)
-                labels = np.array([s[1] for s in samples], dtype=np.int32)
+                # Filter out samples with shape mismatch
+                if not samples:
+                    logger.warning(f"Skipping layer {layer_name}: no samples")
+                    continue
+                
+                # Get the expected shape from the first sample
+                expected_shape = samples[0][0].shape
+                
+                # Filter samples to only those matching the expected shape
+                valid_samples = [s for s in samples if s[0].shape == expected_shape]
+                
+                if len(valid_samples) < len(samples):
+                    logger.warning(
+                        f"Filtered {layer_name}: kept {len(valid_samples)}/{len(samples)} samples "
+                        f"(discarded {len(samples) - len(valid_samples)} with inconsistent shapes)"
+                    )
+                
+                if not valid_samples:
+                    logger.warning(f"Skipping layer {layer_name}: no valid samples after filtering")
+                    continue
+                
+                vecs = np.stack([s[0] for s in valid_samples], axis=0).astype(np.float32)
+                labels = np.array([s[1] for s in valid_samples], dtype=np.int32)
 
                 grp = f.create_group(layer_name)
                 grp.create_dataset("data", data=vecs, compression="gzip")
                 grp.create_dataset("labels", data=labels)
                 grp.attrs["label_map"] = label_map_json
-                grp.attrs["n_samples"] = len(samples)
+                grp.attrs["n_samples"] = len(valid_samples)
                 grp.attrs["hidden_dim"] = vecs.shape[1]
 
         logger.info(f"Saved activation dataset: {self.output_path}")
         logger.info(f"  Conditions: {self._label_map}")
         logger.info(f"  Layers: {len(self._buffer)}")
         for ln, s in self._buffer.items():
-            logger.info(f"    {ln}: {len(s)} samples, dim={s[0][0].shape[0]}")
+            if s:
+                logger.info(f"    {ln}: {len(s)} samples, dim={s[0][0].shape[0]}")
 
 
 # ---------------------------------------------------------------------------
